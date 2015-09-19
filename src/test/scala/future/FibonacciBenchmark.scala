@@ -12,79 +12,78 @@ object FibonacciBenchmark extends Bench.LocalTime {
 
   val expected: Map[Int, Int] = {
     (0 to max).map { x =>
-      x -> Scala.fibonacci(x)
+      x -> Fibonacci.fibonacci(x)
     }.toMap
   }
 
   performance of "fibonacci" in {
-    measure method "raw" in {
+    measure method "fibonacci" in {
       using(sizes) in { x =>
-        assert(Scala.fibonacci(x) == expected(x))
+        assert(Fibonacci.fibonacci(x) == expected(x))
       }
     }
 
-    measure method "ScalaTry" in {
+    measure method "scala.util.Try" in {
       using(sizes) in { x =>
-        assert(ScalaTry.fibonacci(x).get == expected(x))
+        assert(Fibonacci.fibonacciTry(x).get == expected(x))
       }
     }
 
-    measure method "ScalaFuture with global context" in {
+    measure method "scala.util.control.TailCalls" in {
+      using(sizes) in { x =>
+        assert(Fibonacci.fibonacciTailCalls(x).result == expected(x))
+      }
+    }
+
+    measure method "scalaz.Trampoline" in {
+      using(sizes) in { x =>
+        assert(Fibonacci.fibonacciTrampoline(x).run == expected(x))
+      }
+    }
+
+    measure method "scala.concurrent.Future with global context" in {
       using(sizes) in { x =>
         import scala.concurrent.ExecutionContext.Implicits.global
-        assert(Await.result(ScalaFuture.fibonacci(x), timeout) == expected(x))
+        assert(Await.result(Fibonacci.fibonacciFuture(x), timeout) == expected(x))
       }
     }
 
-    measure method "ScalaFuture with parallel running" in {
+    measure method "scala.concurrent.Future with thread pool context" in {
       using(sizes) in { x =>
-        import scala.concurrent.ExecutionContext.Implicits.global
-        assert(Await.result(ScalaFuture.fibonaccip(x), timeout) == expected(x))
+        import future.ThreadPoolContext.Implicits.context
+        assert(Await.result(Fibonacci.fibonacciFuture(x), timeout) == expected(x))
       }
     }
 
-    measure method "ScalaFuture with BlockContext" in {
+    measure method "scala.concurrent.Future with BlockContext" in {
       using(sizes) in { x =>
         import future.BlockContext.Implicits.context
-        assert(Await.result(ScalaFuture.fibonacci(x), timeout) == expected(x))
+        assert(Await.result(Fibonacci.fibonacciFuture(x), timeout) == expected(x))
       }
     }
 
-    measure method "ScalaFuture with trampoline" in {
+    measure method "scala.concurrent.Future with trampoline context" in {
       using(sizes) in { x =>
         import play.api.libs.iteratee.Execution.Implicits.trampoline
-        assert(Await.result(ScalaFuture.fibonacci(x), timeout) == expected(x))
+        assert(Await.result(Fibonacci.fibonacciFuture(x), timeout) == expected(x))
       }
     }
 
-    measure method "AkkaFastFuture with global context" in {
+    measure method "scalaz.concurrent.Task" in {
       using(sizes) in { x =>
-        import scala.concurrent.ExecutionContext.Implicits.global
-        assert(Await.result(AkkaFastFuture.fibonacci(x), timeout) == expected(x))
+        assert(Fibonacci.fibonacciTask(x).run == expected(x))
       }
     }
 
-    measure method "ScalazTask" in {
+    measure method "scalaz.concurrent.Task with fork" in {
       using(sizes) in { x =>
-        assert(ScalazTask.fibonacci(x).run == expected(x))
+        assert(Fibonacci.fibonacciTaskWithFork(x).run == expected(x))
       }
     }
 
-    measure method "ScalazTask with fork" in {
+    measure method "scalaz.concurrent.Task with optimized" in {
       using(sizes) in { x =>
-        assert(ScalazTask.fibonacciF(x).run == expected(x))
-      }
-    }
-
-    measure method "ScalazTask with trampoline" in {
-      using(sizes) in { x =>
-        assert(ScalazTask.fibonacciT(x).run == expected(x))
-      }
-    }
-
-    measure method "ScalazTask with optimized" in {
-      using(sizes) in { x =>
-        assert(ScalazTask.fibonacciO(x).run == expected(x))
+        assert(Fibonacci.fibonacciTaskOptimized(x).run == expected(x))
       }
     }
   }
