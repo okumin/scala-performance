@@ -1,6 +1,7 @@
 package future
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.TailCalls
 import scala.util.control.TailCalls.TailRec
 import scala.util.{Success, Try}
@@ -9,6 +10,35 @@ import scalaz.Trampoline
 import scalaz.concurrent.Task
 
 object Fibonacci {
+  def await[A](future: Future[A]): A = {
+    Await.result(future, 1000.seconds)
+  }
+  def main(args: Array[String]): Unit = {
+    val n = args(1).toInt
+    args(0) match {
+      case "fibonacci" => println(fibonacci(n))
+      case "try" => println(fibonacciTry(n).get)
+      case "future_global" =>
+        import scala.concurrent.ExecutionContext.Implicits.global
+        println(await(fibonacciFuture(n)))
+      case "future_thread_pool" =>
+        import ThreadPoolContext.Implicits.context
+        println(await(fibonacciFuture(n)))
+      case "future_blocking" =>
+        import BlockContext.Implicits.context
+        println(await(fibonacciFuture(n)))
+      case "future_trampoline" =>
+        import play.api.libs.iteratee.Execution.Implicits.trampoline
+        println(await(fibonacciFuture(n)))
+      case "task" =>
+        println(fibonacciTask(n).run)
+      case "task_fork" =>
+        println(fibonacciTaskWithFork(n).run)
+      case "task_optimized" =>
+        println(fibonacciTaskOptimized(n).run)
+    }
+  }
+
   def fibonacci(n: Int): Int = n match {
     case 0 => 0
     case 1 => 1

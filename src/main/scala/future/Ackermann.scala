@@ -1,6 +1,7 @@
 package future
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.TailCalls
 import scala.util.control.TailCalls.TailRec
 import scala.util.{Success, Try}
@@ -9,6 +10,37 @@ import scalaz.Trampoline
 import scalaz.concurrent.Task
 
 object Ackermann {
+  def await[A](future: Future[A]): A = {
+    Await.result(future, 1000.seconds)
+  }
+  def main(args: Array[String]): Unit = {
+    val m = 3
+    val n = args(1).toInt
+    args(0) match {
+      case "ackermann" => println(ackermann(m, n))
+      case "try" => println(ackermannTry(m, n).get)
+      case "future_global" =>
+        import scala.concurrent.ExecutionContext.Implicits.global
+        println(await(ackermannFuture(m, n)))
+      case "future_thread_pool" =>
+        import ThreadPoolContext.Implicits.context
+        println(await(ackermannFuture(m, n)))
+      case "future_blocking" =>
+        import BlockContext.Implicits.context
+        println(await(ackermannFuture(m, n)))
+      case "future_trampoline" =>
+        import play.api.libs.iteratee.Execution.Implicits.trampoline
+        println(await(ackermannFuture(m, n)))
+      case "task" =>
+        println(ackermannTask(m, n).run)
+      case "task_fork" =>
+        println(ackermannTaskWithFork(m, n).run)
+      case "task_optimized" =>
+        println(ackermannTaskOptimized(m, n).run)
+
+    }
+  }
+
   def ackermann(m: Int, n: Int): Int = (m, n) match {
     case (0, _) => n + 1
     case (_, 0) => ackermann(m - 1, 1)
