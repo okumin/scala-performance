@@ -6,7 +6,7 @@ import scala.concurrent.{Await, Future}
 
 trait Benchmark extends Bench.LocalTime {
   val timeout = 1000.seconds
-  val testCase = Option(System.getProperty("test-case"))
+  val testCase = Option(System.getProperty("test.case"))
   implicit class RichScope(scope: Scope) {
     def when(tag: String)(f: => Unit): Unit = testCase match {
       case Some(`tag`) | None => scope.in(f)
