@@ -8,9 +8,9 @@ trait Benchmark extends Bench.LocalTime {
   val timeout = 1000.seconds
   val testCase = Option(System.getProperty("test.case"))
   implicit class RichScope(scope: Scope) {
-    def when(tag: String)(f: => Unit): Unit = testCase match {
-      case Some(`tag`) | None => scope.in(f)
-      case Some(_) =>
+    def when(tags: String*)(f: => Unit): Unit = testCase match {
+      case Some(x) if !tags.contains(x) =>
+      case _ => scope.in(f)
     }
   }
 
